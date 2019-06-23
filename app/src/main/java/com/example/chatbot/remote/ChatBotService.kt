@@ -3,7 +3,6 @@ package com.example.chatbot.remote
 import com.example.chatbot.model.ChatBotServerResponseModel
 import io.reactivex.Flowable
 import retrofit2.http.GET
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ChatBotService {

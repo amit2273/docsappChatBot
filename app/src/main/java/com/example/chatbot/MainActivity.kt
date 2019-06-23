@@ -1,14 +1,10 @@
 package com.example.chatbot
 
-import `in`.medibuddy.presentaion.state.Resource
-import `in`.medibuddy.presentaion.state.ResourceState
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatbot.adapters.ChatAdapter

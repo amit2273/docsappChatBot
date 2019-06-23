@@ -1,10 +1,10 @@
 package com.example.chatbot.viewModel
 
 import `in`.medibuddy.domain.interactor.infiniti.ChatBotServiceCategory
-import `in`.medibuddy.presentaion.state.Resource
-import `in`.medibuddy.presentaion.state.ResourceState
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.chatbot.Resource
+import com.example.chatbot.ResourceState
 import com.example.chatbot.model.ChatBotServerRequestModel
 import com.example.chatbot.model.ChatBotServerResponseModel
 import io.reactivex.subscribers.DisposableSubscriber
