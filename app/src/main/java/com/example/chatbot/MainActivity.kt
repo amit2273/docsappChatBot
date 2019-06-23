@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
             if (!typed_message.text.toString().isNullOrEmpty()) {
                 chatViewModel.getChatBotServiceRequest(ChatBotServerRequestModel(message = typed_message.text.toString()))
                 listOfChatMessages.add(ChatModel(typed_message.text.toString()))
+                typed_message.text?.clear()
                 updateMessage(listOfChatMessages)
 
             }
@@ -66,7 +67,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateMessage(list: List<ChatModel>) {
         chatAdapter?.submitList(list)
         chatAdapter?.notifyDataSetChanged()
-        // chat_recycler_view.smoothScrollToPosition(chatAdapter?.itemCount - 1)
+        chatAdapter?.let {
+            chat_recycler_view.smoothScrollToPosition(it.itemCount - 1)
+        }
+
 
     }
 }
