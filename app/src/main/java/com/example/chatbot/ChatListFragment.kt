@@ -10,14 +10,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatbot.adapters.ChatListAdapter
 import com.example.chatbot.database.entity.ChatMessageEntity
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
-class ChatListFragment : Fragment(){
-
-    private lateinit var cacheImpl : ChatMessageCacheImpl
+class ChatListFragment : Fragment() {
+    private lateinit var disposable: Disposable
+    private lateinit var cacheImpl: ChatMessageCacheImpl
     private var chatListAdapter: ChatListAdapter? = null
-    private lateinit var onClicListener : ChatListAdapter.onCLickListener
+    private lateinit var onClicListener: ChatListAdapter.onCLickListener
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -42,17 +43,17 @@ class ChatListFragment : Fragment(){
 
     private fun getChatMessages() {
         cacheImpl = ChatMessageCacheImpl(requireContext())
-        val subscriber = cacheImpl.getChatMessages().subscribeOn(Schedulers.io())
+        disposable = cacheImpl.getChatMessages().subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread()).subscribe {
                 updateAdapter(it)
             }
     }
 
-    private fun updateAdapter(list : List<ChatMessageEntity>){
+    private fun updateAdapter(list: List<ChatMessageEntity>) {
         chatListAdapter?.submitList(list)
         chatListAdapter?.notifyDataSetChanged()
         chatListAdapter?.let {
-            if(it.itemCount >1){
+            if (it.itemCount > 1) {
                 chat_recycler_view.smoothScrollToPosition(it.itemCount - 1)
             }
 
@@ -64,8 +65,8 @@ class ChatListFragment : Fragment(){
     override fun onDestroy() {
         //unsubscribe subscriber
         super.onDestroy()
+        disposable.dispose()
     }
-
 
 
 }

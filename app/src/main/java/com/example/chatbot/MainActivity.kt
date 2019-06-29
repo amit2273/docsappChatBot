@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
@@ -19,14 +20,63 @@ import com.example.chatbot.database.entity.Messages
 import com.example.chatbot.model.ChatBotServerRequestModel
 import com.example.chatbot.model.ChatBotServerResponseModel
 import com.example.chatbot.model.ChatModel
+import com.example.chatbot.util.ConnectionLiveData
 import com.example.chatbot.util.Tags
 import com.example.chatbot.viewModel.ChatViewModel
 import com.example.chatbot.viewModel.SavedChatListFragment
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import com.example.chatbot.util.ConnectionModel
+import android.net.NetworkInfo
+import android.net.ConnectivityManager
+
+
+
+
 
 class MainActivity : AppCompatActivity(), ChatListAdapter.onCLickListener {
+
+
+    private val disposables = CompositeDisposable()
+    private var chatAdapter: ChatAdapter? = null
+    private val listOfChatMessages = mutableListOf<ChatModel>()
+    private lateinit var chatViewModel: ChatViewModel
+    private lateinit var cacheImpl: ChatMessageCacheImpl
+    private var messageID: Int = 0
+    private var chatID: Int = 0// I have used ID for quick demo. We can use time stamp instead
+    private var listOfMessages = mutableListOf<Messages>()
+    private val listOfUnsyncData = mutableListOf<String>()
+
+    private lateinit var  connectionLiveData : ConnectionLiveData
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        chatAdapter = ChatAdapter()
+        cacheImpl = ChatMessageCacheImpl(this)
+        connectionLiveData = ConnectionLiveData(applicationContext)
+        chat_recycler_view.adapter = chatAdapter
+        chat_recycler_view.layoutManager = LinearLayoutManager(this)
+        chatViewModel = ViewModelProviders.of(this).get(ChatViewModel::class.java)
+        chatViewModel.getChatBotLiveData().observe(this, Observer { responseFromServer(it) })
+        onSendClicked()
+        chatID = getChatID()
+        saveChatID(chatID +1)
+
+        connectionLiveData.observe(this, object : Observer<ConnectionModel> {
+            override fun onChanged(@Nullable connection: ConnectionModel) {
+                if (connection.isConnected) {
+                    //listOfUnsyncData send data from this list to server
+                    Toast.makeText(this@MainActivity, "List of unsend messages Sent to Server", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@MainActivity, "List of unsend messages updated", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
+    }
+
     override fun onChatWindowClicked(item: ChatMessageEntity) {
         val fragment = SavedChatListFragment()
         val bundle = Bundle()
@@ -37,37 +87,29 @@ class MainActivity : AppCompatActivity(), ChatListAdapter.onCLickListener {
 
     }
 
-    private var chatAdapter: ChatAdapter? = null
-    private val listOfChatMessages = mutableListOf<ChatModel>()
-    private lateinit var chatViewModel: ChatViewModel
-    private lateinit var cacheImpl: ChatMessageCacheImpl
-    private var messageID: Int = 0
-    private var chatID: Int = 0// I have used ID for quick demo. We can use time stamp instead
-    private var listOfMessages = mutableListOf<Messages>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        chatAdapter = ChatAdapter()
-        cacheImpl = ChatMessageCacheImpl(this)
-        chat_recycler_view.adapter = chatAdapter
-        chat_recycler_view.layoutManager = LinearLayoutManager(this)
-        chatViewModel = ViewModelProviders.of(this).get(ChatViewModel::class.java)
-        chatViewModel.getChatBotLiveData().observe(this, Observer { responseFromServer(it) })
-        onSendClicked()
-        chatID = getChatID()
-        saveChatID(chatID +1)
+    override fun onDestroy() {
+        super.onDestroy()
+        if (!disposables.isDisposed) disposables.clear()
     }
 
     private fun onSendClicked() {
         bt_send.setOnClickListener {
             if (!typed_message.text.toString().isNullOrEmpty()) {
-                listOfMessages.add(Messages(typed_message.text.toString(), true, messageID++))
-                saveChatMessages(ChatMessageEntity(listOfMessages, chatID))
-                chatViewModel.getChatBotServiceRequest(ChatBotServerRequestModel(message = typed_message.text.toString()))
-                listOfChatMessages.add(ChatModel(typed_message.text.toString()))
-                typed_message.text?.clear()
-                updateMessage(listOfChatMessages)
+                if(isNetworkAvailable()){
+                    listOfMessages.add(Messages(typed_message.text.toString(), true, messageID++))
+                    saveChatMessages(ChatMessageEntity(listOfMessages, chatID))
+                    chatViewModel.getChatBotServiceRequest(ChatBotServerRequestModel(message = typed_message.text.toString()))
+                    listOfChatMessages.add(ChatModel(typed_message.text.toString()))
+                    typed_message.text?.clear()
+                    updateMessage(listOfChatMessages)
+                }else{
+                    listOfMessages.add(Messages(typed_message.text.toString(), true, messageID++))
+                    saveChatMessages(ChatMessageEntity(listOfMessages, chatID))
+                   // chatViewModel.getChatBotServiceRequest(ChatBotServerRequestModel(message = typed_message.text.toString()))
+                    listOfChatMessages.add(ChatModel(typed_message.text.toString()))
+                    typed_message.text?.clear()
+                    updateMessage(listOfChatMessages)
+                }
 
             }
 
@@ -89,10 +131,12 @@ class MainActivity : AppCompatActivity(), ChatListAdapter.onCLickListener {
 
 
     private fun saveChatMessages(model: ChatMessageEntity) {
-        cacheImpl.saveChatMessages(model).subscribeOn(Schedulers.io())
+       val disposable1 =  cacheImpl.saveChatMessages(model).subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread()).subscribe {
                 Log.d("Ids Saved", "Message Saved Successfully")
             }
+
+        disposables.add(disposable1)
 
     }
 
@@ -164,6 +208,12 @@ class MainActivity : AppCompatActivity(), ChatListAdapter.onCLickListener {
             .add(holderID, fragment, tag)
             .addToBackStack(null)
             .commitAllowingStateLoss()
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetworkInfo = connectivityManager.activeNetworkInfo
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected
     }
 
 }

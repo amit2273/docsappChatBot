@@ -34,6 +34,10 @@ class ChatAdapter() : androidx.recyclerview.widget.ListAdapter<ChatModel, ChatAd
         }
     }
 
+    override fun getItemCount(): Int {
+        return super.getItemCount()
+    }
+
 
     inner class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val chatUser: TextView = itemView.findViewById(R.id.user_chat_message)
@@ -44,9 +48,11 @@ class ChatAdapter() : androidx.recyclerview.widget.ListAdapter<ChatModel, ChatAd
             if(item.isUserChat){
                 chatUser.text = item.chatMessage
                 chatBotCard.visibility = View.GONE
+                chatUserCard.visibility = View.VISIBLE
             }else{
                 chatBot.text = item.chatMessage
                 chatUserCard.visibility = View.GONE
+                chatBotCard.visibility = View.VISIBLE
             }
 
         }
