@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.chatbot.R
@@ -35,13 +36,17 @@ class ChatAdapter() : androidx.recyclerview.widget.ListAdapter<ChatModel, ChatAd
 
 
     inner class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val chatMessage: TextView = itemView.findViewById(R.id.chat_message)
+        val chatUser: TextView = itemView.findViewById(R.id.user_chat_message)
+        val chatBot: TextView = itemView.findViewById(R.id.bot_chat_message)
+        val chatUserCard: CardView = itemView.findViewById(R.id.userChat)
+        val chatBotCard: CardView = itemView.findViewById(R.id.botChat)
         fun bindItem(item: ChatModel) {
-            chatMessage.text = item.chatMessage
             if(item.isUserChat){
-                chatMessage.gravity = Gravity.RIGHT
+                chatUser.text = item.chatMessage
+                chatBotCard.visibility = View.GONE
             }else{
-                chatMessage.gravity = Gravity.LEFT
+                chatBot.text = item.chatMessage
+                chatUserCard.visibility = View.GONE
             }
 
         }

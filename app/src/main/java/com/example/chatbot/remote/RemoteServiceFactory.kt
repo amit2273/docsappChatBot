@@ -12,7 +12,7 @@ import java.lang.Exception
 
 object RemoteServiceFactory {
 
-    private const val BASE_URL = "http://www.personalityforge.com"
+    private const val BASE_URL = "https://www.personalityforge.com"
     private var sevices: ChatBotService? = null
     fun makeChatBotService(isDebug: Boolean): ChatBotService {
         return if (sevices == null) {
